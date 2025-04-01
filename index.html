@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Subred</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link rel="shortcut icon" href="icon.png" type="image/x-icon">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Calculadora de Subred</h2>
+        <input type="text" id="ip" placeholder="Ingrese la IP (Ej: 172.168.59.111)" oninput="validarIp()"
+            autocomplete="off">
+        <input type="number" id="cidr" placeholder="Máscara CIDR (Ej: 26)" min="1" max="32">
+        <input type="number" id="cantidadIps" placeholder="Cantidad de IPs válidas" min="1">
+        <button onclick="calcular()" id="calcular">Calcular</button>
+        <button onclick="limpiar()" id="limpiar">Limpiar</button>
+
+        <div id="error" class="error"></div>
+
+        <div class="result">
+            <p><strong>Segmento de Red:</strong> <span id="red"></span></p>
+            <p><strong>Primera IP válida:</strong> <span id="primeraIp"></span></p>
+            <p><strong>Última IP válida:</strong> <span id="ultimaIp"></span></p>
+            <p><strong>Broadcast:</strong> <span id="broadcast"></span></p>
+            <p><strong>#Hosts:</strong> <span id="hosts"></span></p>
+            <p><strong>Máscara de Subred (Decimal):</strong> <span id="mascaraDecimal"></span></p>
+        </div>
+
+        <div class="valid-ips">
+            <p><strong>IPs válidas:</strong></p>
+            <ul id="ipsValidasList"></ul>
+        </div>
+
+        <button id="redirect-button" onclick="window.location.href='https://conversor-binario-decimal.vercel.app/'">
+            Ir al Conversor Binario-Decimal
+        </button>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
