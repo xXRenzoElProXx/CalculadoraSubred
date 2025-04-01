@@ -12,8 +12,10 @@ function validarIp() {
     let ipInput = document.getElementById("ip");
     let ipValue = ipInput.value;
 
-    let regex = /^[0-9\.]+$/;
-    if (!regex.test(ipValue)) {
+    ipInput.value = ipValue.replace(/[^0-9.]/g, "");
+
+    let regex = /^[0-9.]+$/;
+    if (!regex.test(ipInput.value)) {
         ipInput.setCustomValidity("Solo se permiten números y puntos.");
     } else {
         ipInput.setCustomValidity("");
