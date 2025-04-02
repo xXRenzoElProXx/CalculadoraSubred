@@ -14,11 +14,22 @@ function validarIp() {
 
     ipInput.value = ipValue.replace(/[^0-9.]/g, "");
 
-    let regex = /^[0-9.]+$/;
-    if (!regex.test(ipInput.value)) {
-        ipInput.setCustomValidity("Solo se permiten números y puntos.");
-    } else {
-        ipInput.setCustomValidity("");
+    let octetos = ipInput.value.split(".");
+
+    if (octetos.length > 4) {
+        ipInput.value = ipInput.value.substring(0, ipInput.value.length - 1);
+        return;
+    }
+
+    for (let i = 0; i < octetos.length; i++) {
+        if (octetos[i].length > 3) {
+            ipInput.value = ipInput.value.substring(0, ipInput.value.length - 1);
+            return;
+        }
+    }
+
+    if (ipInput.value.length > 15) {
+        ipInput.value = ipInput.value.substring(0, 15);
     }
 }
 
