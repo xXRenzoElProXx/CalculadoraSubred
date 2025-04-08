@@ -34,42 +34,42 @@ function validarIp() {
 }
 
 function calcularSubred(ip, cidr, cantidadIps) {
-    let ipOctetos = ip.split(".").map(Number);
-    let mascaraBinaria = "1".repeat(cidr) + "0".repeat(32 - cidr);
-    let mascara = mascaraBinaria.match(/.{8}/g).map(b => parseInt(b, 2));
+    let ipBin = ip.split('.').map(o => parseInt(o).toString(2).padStart(8, '0')).join('');
+    let redBin = ipBin.substring(0, cidr).padEnd(32, '0');
+    let broadcastBin = ipBin.substring(0, cidr).padEnd(32, '1');
 
-    let red = ipOctetos.map((o, i) => o & mascara[i]);
-
-    let bloque = 256 - mascara[3];
-    red[3] = Math.floor(ipOctetos[3] / bloque) * bloque;
-
-    let broadcast = [...red];
-    broadcast[3] = red[3] + bloque - 1;
+    let red = redBin.match(/.{8}/g).map(b => parseInt(b, 2));
+    let broadcast = broadcastBin.match(/.{8}/g).map(b => parseInt(b, 2));
 
     let primeraIp = [...red];
     primeraIp[3] += 1;
-
     let ultimaIp = [...broadcast];
     ultimaIp[3] -= 1;
 
-    let hosts = Math.pow(2, (32 - cidr)) - 2;
+    let hosts = Math.pow(2, 32 - cidr) - 2;
 
     let validIps = [];
     let ipActual = [...primeraIp];
-    for (let i = 0; i < cantidadIps; i++) {
-        if (i < hosts) {
-            validIps.push(ipActual.join("."));
-            ipActual[3]++;
+
+    for (let i = 0; i < cantidadIps && i < hosts; i++) {
+        validIps.push(ipActual.join('.'));
+        ipActual[3]++;
+        for (let j = 3; j > 0; j--) {
+            if (ipActual[j] > 255) {
+                ipActual[j] = 0;
+                ipActual[j - 1]++;
+            }
         }
     }
 
-    let mascaraDecimal = mascara.map(o => o.toString()).join(".").replace(/11111111/g, "255");
+    let mascaraBinaria = "1".repeat(cidr).padEnd(32, '0');
+    let mascaraDecimal = mascaraBinaria.match(/.{8}/g).map(b => parseInt(b, 2)).join('.');
 
     return {
-        red: red.join("."),
-        primeraIp: primeraIp.join("."),
-        ultimaIp: ultimaIp.join("."),
-        broadcast: broadcast.join("."),
+        red: red.join('.'),
+        primeraIp: primeraIp.join('.'),
+        ultimaIp: ultimaIp.join('.'),
+        broadcast: broadcast.join('.'),
         hosts: hosts,
         validIps: validIps,
         mascaraDecimal: mascaraDecimal
