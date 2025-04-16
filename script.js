@@ -33,6 +33,55 @@ function validarIp() {
     }
 }
 
+function validarCidr() {
+    let cidrInput = document.getElementById("cidr");
+    let cidrValue = parseInt(cidrInput.value);
+    
+    if (isNaN(cidrValue)) {
+        cidrInput.value = "";
+        return;
+    }
+    
+    if (cidrValue < 1) {
+        cidrInput.value = 1;
+    } else if (cidrValue > 32) {
+        cidrInput.value = 32;
+    }
+    
+    actualizarMaximoCantidadIps();
+}
+
+function actualizarMaximoCantidadIps() {
+    let cidr = document.getElementById("cidr").value;
+    let cantidadIpsInput = document.getElementById("cantidadIps");
+    
+    if (cidr >= 1 && cidr <= 32) {
+        let maxHosts = Math.pow(2, (32 - cidr)) - 2;
+        cantidadIpsInput.max = maxHosts;
+        cantidadIpsInput.setAttribute("placeholder", `Cantidad de IPs válidas (max: ${maxHosts})`);
+    } else {
+        cantidadIpsInput.removeAttribute("max");
+        cantidadIpsInput.setAttribute("placeholder", "Cantidad de IPs válidas");
+    }
+}
+
+function validarCantidadIps() {
+    let cantidadIpsInput = document.getElementById("cantidadIps");
+    let cantidadIpsValue = parseInt(cantidadIpsInput.value);
+    let maxHosts = parseInt(cantidadIpsInput.getAttribute("max") || "0");
+    
+    if (isNaN(cantidadIpsValue)) {
+        cantidadIpsInput.value = "";
+        return;
+    }
+    
+    if (cantidadIpsValue < 1) {
+        cantidadIpsInput.value = 1;
+    } else if (maxHosts > 0 && cantidadIpsValue > maxHosts) {
+        cantidadIpsInput.value = maxHosts;
+    }
+}
+
 function calcularSubred(ip, cidr, cantidadIps) {
     let ipBin = ip.split('.').map(o => parseInt(o).toString(2).padStart(8, '0')).join('');
     let redBin = ipBin.substring(0, cidr).padEnd(32, '0');
