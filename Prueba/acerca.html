@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Salud La Molina - Acerca de</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background-color: #2a7d8c;
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo h1 {
+            font-size: 1.8rem;
+            margin-left: 15px;
+        }
+        
+        .navbar {
+            background-color: #1e6070;
+            padding: 10px 0;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .navbar a:hover, .navbar a.active {
+            background-color: #3998ac;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .page-title {
+            background-color: #f0f0f0;
+            padding: 30px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .page-title h2 {
+            color: #2a7d8c;
+            font-size: 2rem;
+        }
+        
+        .about-section {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+        
+        .about-content {
+            flex: 2;
+            padding-right: 30px;
+        }
+        
+        .about-image {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .about-image img {
+            width: 100%;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .about-content h3 {
+            color: #2a7d8c;
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+        }
+        
+        .about-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .mission-vision {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin: 40px 0;
+        }
+        
+        .mission, .vision {
+            flex: 0 0 calc(50% - 20px);
+            background-color: white;
+            padding: 30px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .mission h3, .vision h3 {
+            color: #2a7d8c;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin: 40px 0;
+            text-align: center;
+        }
+        
+        .stat-item {
+            flex: 1;
+            min-width: 200px;
+            padding: 20px;
+            margin: 10px;
+            background-color: #2a7d8c;
+            color: white;
+            border-radius: 5px;
+        }
+        
+        .stat-item .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .team {
+            margin: 40px 0;
+        }
+        
+        .team h3 {
+            color: #2a7d8c;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.6rem;
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .team-member {
+            background-color: white;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .team-member img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .team-member-info {
+            padding: 15px;
+        }
+        
+        .team-member-info h4 {
+            color: #2a7d8c;
+            margin-bottom: 5px;
+        }
+        
+        .team-member-info p {
+            color: #666;
+            font-style: italic;
+        }
+        
+        footer {
+            background-color: #2a7d8c;
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .footer-section p, .footer-section a {
+            color: #e0e0e0;
+            margin-bottom: 10px;
+            display: block;
+            text-decoration: none;
+        }
+        
+        .copyright {
+            background-color: #1e6070;
+            text-align: center;
+            padding: 15px 0;
+            color: #e0e0e0;
+        }
+        
+        @media (max-width: 768px) {
+            .about-section {
+                flex-direction: column;
+            }
+            
+            .about-content {
+                padding-right: 0;
+                margin-bottom: 20px;
+            }
+            
+            .mission, .vision {
+                flex: 0 0 100%;
+            }
+            
+            .nav-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .navbar a {
+                display: block;
+                text-align: center;
+                margin-bottom: 5px;
+            }
+            
+            .footer-section {
+                flex: 0 0 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img src="/api/placeholder/50/50" alt="Logo Centro de Salud">
+                <h1>Centro de Salud La Molina</h1>
+            </div>
+        </div>
+    </header>
+    
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html">Inicio</a>
+            <a href="#" class="active">Acerca de</a>
+            <a href="atenciones.html">Atenciones</a>
+            <a href="servicios.html">Servicios</a>
+            <a href="contacto.html">Contacto</a>
+        </div>
+    </nav>
+
+    <div class="page-title">
+        <div class="container">
+            <h2>Acerca de Nosotros</h2>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="about-section">
+            <div class="about-content">
+                <h3>Nuestra Historia</h3>
+                <p>El Centro de Salud La Molina fue fundado en 1998 con el objetivo de brindar servicios médicos de calidad a la comunidad de La Molina y distritos aledaños. Desde nuestros humildes inicios con apenas 5 profesionales de la salud, hemos crecido hasta convertirnos en uno de los centros de salud más reconocidos de la zona.</p>
+                
+                <p>A lo largo de nuestra trayectoria, hemos enfrentado desafíos y celebrado logros importantes. En 2008, ampliamos nuestras instalaciones para incluir nuevas especialidades médicas. En 2015, implementamos un sistema de gestión digital para mejorar la experiencia de nuestros pacientes. Y en 2020, durante la pandemia global, adaptamos nuestros servicios para brindar atención segura y eficiente.</p>
+                
+                <p>Hoy, con más de 25 años de experiencia, seguimos comprometidos con nuestra misión de cuidar la salud de nuestra comunidad, ofreciendo servicios médicos de calidad con un enfoque humano y profesional.</p>
+            </div>
+            <div class="about-image">
+                <img src="/api/placeholder/500/400" alt="Centro de Salud La Molina">
+            </div>
+        </div>
+
+        <div class="mission-vision">
+            <div class="mission">
+                <h3>Nuestra Misión</h3>
+                <p>Proveer servicios de salud de alta calidad con calidez humana, enfocados en la prevención, diagnóstico y tratamiento oportuno de enfermedades, contribuyendo al bienestar y calidad de vida de nuestra comunidad.</p>
+            </div>
+            <div class="vision">
+                <h3>Nuestra Visión</h3>
+                <p>Ser reconocidos como el centro de salud líder en la región, destacando por la excelencia en la atención médica, la innovación en servicios de salud y el compromiso con el bienestar integral de nuestros pacientes.</p>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="number">25+</div>
+                <p>Años de Experiencia</p>
+            </div>
+            <div class="stat-item">
+                <div class="number">30+</div>
+                <p>Profesionales de la Salud</p>
+            </div>
+            <div class="stat-item">
+                <div class="number">15</div>
+                <p>Especialidades Médicas</p>
+            </div>
+            <div class="stat-item">
+                <div class="number">10,000+</div>
+                <p>Pacientes Atendidos al Año</p>
+            </div>
+        </div>
+
+        <div class="team">
+            <h3>Nuestro Equipo Directivo</h3>
+            <div class="team-grid">
+                <div class="team-member">
+                    <img src="/api/placeholder/300/300" alt="Director Médico">
+                    <div class="team-member-info">
+                        <h4>Dr. Carlos Ramírez</h4>
+                        <p>Director Médico</p>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <img src="/api/placeholder/300/300" alt="Jefa de Enfermería">
+                    <div class="team-member-info">
+                        <h4>Lic. Ana Mendoza</h4>
+                        <p>Jefa de Enfermería</p>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <img src="/api/placeholder/300/300" alt="Coordinador de Especialidades">
+                    <div class="team-member-info">
+                        <h4>Dr. Luis Torres</h4>
+                        <p>Coordinador de Especialidades</p>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <img src="/api/placeholder/300/300" alt="Administradora">
+                    <div class="team-member-info">
+                        <h4>Lic. Patricia Flores</h4>
+                        <p>Administradora</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Centro de Salud La Molina</h3>
+                <p>Comprometidos con la salud y bienestar de nuestra comunidad desde 1998.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Contacto</h3>
+                <p>Av. La Molina 123, La Molina</p>
+                <p>Teléfono: (01) 123-4567</p>
+                <p>Email: info@csaludlamolina.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Horario de Atención</h3>
+                <p>Lunes a Viernes: 8:00 AM - 8:00 PM</p>
+                <p>Sábados: 8:00 AM - 2:00 PM</p>
+                <p>Emergencias: 24/7</p>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025 Centro de Salud La Molina. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript para efectos visuales
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación de los números estadísticos
+            const statNumbers = document.querySelectorAll('.stat-item .number');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateNumber(entry.target);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            });
+
+            statNumbers.forEach(number => {
+                observer.observe(number);
+            });
+
+            function animateNumber(element) {
+                const finalValue = element.textContent;
+                const suffix = finalValue.includes('+') ? '+' : '';
+                const numericValue = parseInt(finalValue.replace(/\D/g, ''));
+                let currentValue = 0;
+                const duration = 2000; // 2 segundos
+                const frameDuration = 1000 / 60; // 60 fps
+                const totalFrames = Math.round(duration / frameDuration);
+                const increment = numericValue / totalFrames;
+
+                const counter = setInterval(() => {
+                    currentValue += increment;
+                    
+                    if (currentValue >= numericValue) {
+                        clearInterval(counter);
+                        element.textContent = numericValue + suffix;
+                    } else {
+                        element.textContent = Math.floor(currentValue) + suffix;
+                    }
+                }, frameDuration);
+            }
+
+            // Efecto de aparición para los miembros del equipo
+            const teamMembers = document.querySelectorAll('.team-member');
+            teamMembers.forEach((member, index) => {
+                member.style.opacity = '0';
+                member.style.transform = 'translateY(20px)';
+                member.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                
+                setTimeout(() => {
+                    member.style.opacity = '1';
+                    member.style.transform = 'translateY(0)';
+                }, 300 * index);
+            });
+        });
+    </script>
+</body>
+</html>
