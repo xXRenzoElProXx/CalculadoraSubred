@@ -1,4 +1,6 @@
 function esIpValida(ip) {
+    if (ip.includes(':')) return esIPv6Valida(ip);
+
     const octetos = ip.split(".");
     if (octetos.length !== 4) return false;
     for (let octeto of octetos) {
@@ -8,14 +10,128 @@ function esIpValida(ip) {
     return true;
 }
 
+function esIPv6Valida(ip) {
+    if (!ip) return false;
+
+    if (ip === '::') return true;
+
+    if (ip.startsWith(':') && !ip.startsWith('::')) return false;
+    if (ip.endsWith(':') && !ip.endsWith('::')) return false;
+
+    const doubleColonCount = (ip.match(/::/g) || []).length;
+    if (doubleColonCount > 1) return false;
+
+    if (ip.includes('::')) {
+        const parts = ip.split('::');
+        if (parts.length !== 2) return false;
+
+        const leftParts = parts[0] ? parts[0].split(':') : [];
+        const rightParts = parts[1] ? parts[1].split(':') : [];
+
+        if (leftParts.length + rightParts.length >= 8) return false;
+
+        for (const part of [...leftParts, ...rightParts]) {
+            if (part && (!part.match(/^[0-9a-fA-F]{1,4}$/))) return false;
+        }
+
+        return true;
+    }
+
+    const groups = ip.split(':');
+    if (groups.length !== 8) return false;
+
+    for (const group of groups) {
+        if (!group.match(/^[0-9a-fA-F]{1,4}$/)) return false;
+    }
+
+    return true;
+}
+
+function expandirIPv6(ip) {
+    if (!ip) return "";
+    if (ip === "::") return "0000:0000:0000:0000:0000:0000:0000:0000";
+
+    const partes = ip.split("::");
+    let izquierda = [];
+    let derecha = [];
+
+    if (partes.length > 0 && partes[0] !== "") {
+        izquierda = partes[0].split(":").filter(p => p !== "");
+    }
+
+    if (partes.length > 1 && partes[1] !== "") {
+        derecha = partes[1].split(":").filter(p => p !== "");
+    }
+
+    const gruposFaltantes = 8 - (izquierda.length + derecha.length);
+    const cerosFaltantes = Array(gruposFaltantes).fill("0000");
+
+    const izquierdaFormateada = izquierda.map(g => g.padStart(4, "0"));
+    const derechaFormateada = derecha.map(g => g.padStart(4, "0"));
+    const ipExpandida = [...izquierdaFormateada, ...cerosFaltantes, ...derechaFormateada].join(":");
+
+    return ipExpandida;
+}
+
 function validarIp(elementId) {
     const input = document.getElementById(elementId);
-    input.value = input.value.replace(/[^0-9.]/g, "");
-    const octetos = input.value.split(".");
+    const cursorPos = input.selectionStart;
 
-    if (octetos.length > 4 || input.value.length > 15 || octetos.some(o => o.length > 3)) {
-        input.value = input.value.substring(0, input.value.length - 1);
+    if (event && (event.inputType === 'deleteContentBackward' || event.inputType === 'deleteContentForward')) {
+        let valor = input.value.replace(/[^0-9.]/g, "");
+        let octetos = valor.split('.');
+
+        for (let i = 0; i < octetos.length; i++) {
+            if (octetos[i] && parseInt(octetos[i]) > 255) {
+                octetos[i] = "255";
+            }
+        }
+
+        input.value = octetos.join('.');
+        return;
     }
+
+    let valor = input.value.replace(/[^0-9.]/g, "");
+
+    if (!valor || valor === '.') {
+        input.value = "";
+        return;
+    }
+
+    let octetos = valor.split('.');
+    let formattedOctetos = [];
+
+    for (let i = 0; i < octetos.length && i < 4; i++) {
+        let octeto = octetos[i];
+
+        if (octeto && parseInt(octeto) > 255) {
+            octeto = "255";
+        }
+
+        formattedOctetos.push(octeto);
+    }
+
+    let formattedValue = "";
+    for (let i = 0; i < formattedOctetos.length; i++) {
+        formattedValue += formattedOctetos[i];
+
+        if (formattedOctetos[i].length === 3 && i < 3 && formattedOctetos.length === i + 1) {
+            formattedValue += ".";
+        } else if (i < formattedOctetos.length - 1) {
+            formattedValue += ".";
+        }
+    }
+
+    input.value = formattedValue;
+
+    const newCursorPos = Math.min(cursorPos + 1, formattedValue.length);
+    input.setSelectionRange(newCursorPos, newCursorPos);
+}
+
+function validarIPv6(elementId) {
+    const input = document.getElementById(elementId);
+    const valor = input.value.replace(/[^0-9a-fA-F:]/g, "");
+    input.value = valor;
 }
 
 function validarCidr() {
@@ -23,6 +139,12 @@ function validarCidr() {
     const valor = parseInt(input.value);
     input.value = isNaN(valor) ? "" : Math.max(1, Math.min(32, valor));
     actualizarMaximoCantidadIps();
+}
+
+function validarCidrIPv6() {
+    const input = document.getElementById("cidr-ipv6");
+    const valor = parseInt(input.value);
+    input.value = isNaN(valor) ? "" : Math.max(1, Math.min(128, valor));
 }
 
 function validarNumHosts() {
@@ -104,7 +226,8 @@ function calcularSubred(ip, cidr, cantidadIpsAMostrar = 0, esModoPorHosts = fals
         validIps,
         mascaraDecimal,
         wildcardMask: wildcardDecimal,
-        cidr
+        cidr,
+        tipo: 'IPv4'
     };
 }
 
@@ -115,7 +238,6 @@ function calcular() {
     const ip = document.getElementById("ip").value;
     const cidr = parseInt(document.getElementById("cidr").value);
     const cantidadIps = document.getElementById("cantidadIps").value;
-    const tipoDispositivo = document.getElementById("tipoDispositivo").value;
 
     if (!ip || !esIpValida(ip)) {
         errorElement.textContent = "Por favor, ingrese una IP válida.";
@@ -133,7 +255,7 @@ function calcular() {
         return;
     }
 
-    mostrarResultados(calcularSubred(ip, cidr, parseInt(cantidadIps), false), tipoDispositivo, false);
+    mostrarResultados(calcularSubred(ip, cidr, parseInt(cantidadIps), false));
 }
 
 function calcularPorHosts() {
@@ -142,7 +264,6 @@ function calcularPorHosts() {
 
     const ip = document.getElementById("ip-hosts").value;
     const numHosts = document.getElementById("num-hosts").value;
-    const tipoDispositivo = document.getElementById("tipoDispositivo-hosts").value;
 
     if (!ip || !esIpValida(ip)) {
         errorElement.textContent = "Por favor, ingrese una IP válida.";
@@ -158,496 +279,313 @@ function calcularPorHosts() {
     document.getElementById("cidr-valor").textContent = cidr;
     document.getElementById("cidr-calculado").classList.remove("hidden");
 
-    mostrarResultados(calcularSubred(ip, cidr, 0, true), tipoDispositivo, true);
+    mostrarResultados(calcularSubred(ip, cidr, 0, true), true);
 }
 
-function mostrarResultados(resultado, tipoDispositivo, esModoPorHosts = false) {
-    ["red", "gateway", "segundaIp", "ultimaIp", "broadcast", "hosts", "mascaraDecimal", "wildcardMask"].forEach(campo => {
-        document.getElementById(campo).textContent = resultado[campo];
+function comprimirIPv6(ipv6) {
+    if (!ipv6) return "";
+    const ipExpandida = expandirIPv6(ipv6);
+    let grupos = ipExpandida.split(":").map(grupo => {
+        const sinCeros = grupo.replace(/^0+/, "");
+        return sinCeros === "" ? "0" : sinCeros;
     });
 
-    if (esModoPorHosts) {
-        document.getElementById("valid-ips-section").style.display = "none";
-        document.getElementById("cisco-config-section").style.display = "none";
+    let resultado = grupos.join(":");
+
+    let maxSecuencia = 0;
+    let inicioSecuencia = -1;
+    let secuenciaActual = 0;
+    let inicioActual = -1;
+
+    for (let i = 0; i < grupos.length; i++) {
+        if (grupos[i] === "0") {
+            if (secuenciaActual === 0) {
+                inicioActual = i;
+            }
+            secuenciaActual++;
+        } else {
+            if (secuenciaActual > maxSecuencia) {
+                maxSecuencia = secuenciaActual;
+                inicioSecuencia = inicioActual;
+            }
+            secuenciaActual = 0;
+        }
+    }
+
+    if (secuenciaActual > maxSecuencia) {
+        maxSecuencia = secuenciaActual;
+        inicioSecuencia = inicioActual;
+    }
+
+    if (maxSecuencia >= 2) {
+        const parteIzquierda = grupos.slice(0, inicioSecuencia).join(":");
+        const parteDerecha = grupos.slice(inicioSecuencia + maxSecuencia).join(":");
+
+        if (parteIzquierda === "" && parteDerecha === "") {
+            resultado = "::";
+        } else if (parteIzquierda === "") {
+            resultado = "::" + parteDerecha;
+        } else if (parteDerecha === "") {
+            resultado = parteIzquierda + "::";
+        } else {
+            resultado = parteIzquierda + "::" + parteDerecha;
+        }
+    }
+
+    return resultado;
+}
+
+function calcularSubredIPv6(ip, cidr) {
+    try {
+        const ipExpandida = expandirIPv6(ip);
+        const ipBin = ipExpandida.split(':').map(segment => {
+            return parseInt(segment, 16).toString(2).padStart(16, '0');
+        }).join('');
+
+        const redBin = ipBin.substring(0, cidr).padEnd(128, '0');
+        const ultimaIpBin = ipBin.substring(0, cidr).padEnd(128, '1');
+
+        const red = redBin.match(/.{16}/g).map(b => parseInt(b, 2).toString(16).padStart(4, '0')).join(':');
+        let primeraIpBin = ipBin.substring(0, cidr).padEnd(128, '0');
+        primeraIpBin = primeraIpBin.substring(0, 127) + '1';
+        const primeraIpHex = primeraIpBin.match(/.{16}/g).map(b => parseInt(b, 2).toString(16).padStart(4, '0')).join(':');
+
+        let ultimaIpCalc = ultimaIpBin.substring(0, 127) + '0';
+        const ultimaIpHex = ultimaIpCalc.match(/.{16}/g).map(b => parseInt(b, 2).toString(16).padStart(4, '0')).join(':');
+
+        const hostBits = 128 - cidr;
+        let hosts;
+        if (hostBits <= 53) {
+            hosts = (Math.pow(2, hostBits) - 2).toString();
+        } else {
+            hosts = "2^" + hostBits + " - 2";
+        }
+
+        return {
+            red: comprimirIPv6(red),
+            gateway: comprimirIPv6(primeraIpHex),
+            ultimaIp: comprimirIPv6(ultimaIpHex),
+            hosts: hosts,
+            mascaraDecimal: "/" + cidr,
+            tipo: 'IPv6'
+        };
+    } catch (error) {
+        console.error('Error en calcularSubredIPv6:', error);
+        throw new Error('Error al calcular la subred IPv6');
+    }
+}
+
+function calcularIPv6() {
+    const errorElement = document.getElementById("error-ipv6");
+    errorElement.textContent = "";
+
+    const ip = document.getElementById("ipv6").value;
+    const cidr = parseInt(document.getElementById("cidr-ipv6").value);
+
+    if (!ip || !esIPv6Valida(ip)) {
+        errorElement.textContent = "Por favor, ingrese una IPv6 válida.";
         return;
     }
 
-    const validIpsSection = document.getElementById("valid-ips-section");
-    const ipsValidasList = document.getElementById("ipsValidasList");
-    ipsValidasList.innerHTML = "";
-
-    if (resultado.validIps && resultado.validIps.length > 0) {
-        validIpsSection.style.display = "block";
-        resultado.validIps.forEach(ip => {
-            const li = document.createElement("li");
-            li.textContent = ip;
-            ipsValidasList.appendChild(li);
-        });
-    } else {
-        validIpsSection.style.display = "none";
+    if (cidr < 0 || cidr > 128 || isNaN(cidr)) {
+        errorElement.textContent = "El prefijo CIDR debe estar entre 0 y 128.";
+        return;
     }
 
-    generarConfiguracionCisco(resultado, tipoDispositivo);
+    try {
+        mostrarResultados(calcularSubredIPv6(ip, cidr));
+    } catch (error) {
+        errorElement.textContent = "Error al calcular la subred IPv6. Verifique los datos ingresados.";
+    }
 }
 
-function generarConfiguracionCisco(resultado, tipoDispositivo) {
-    const interfaz = tipoDispositivo === 'router' ? 'GigabitEthernet0/0/0' : 'VLAN1';
-    let configuracion = '';
+function mostrarResultados(resultado, esModoPorHosts = false) {
+    const ipv6Details = document.getElementById("ipv6-details");
+    if (resultado.tipo === 'IPv6') {
+        ipv6Details.classList.remove("hidden");
+        const ipOriginal = document.getElementById("ipv6").value;
+        const formatoCompleto = expandirIPv6(ipOriginal);
 
-    switch (tipoDispositivo) {
-        case 'router':
-            configuracion = `! Configuración para Router Cisco
-! Configuración inicial
-enable
-configure terminal
-hostname ROUTER
-service password-encryption
-banner motd #Acceso Restringido - Solo Personal Autorizado#
-!
-! Configuración de seguridad básica
-enable secret class
-line console 0
- password cisco
- login
-line vty 0 4
- password cisco
- login
-!
-! Configuración de interfaz física principal
-interface ${interfaz}
- description Conexion a Switch Troncal
- no ip address
- no shutdown
-!
-! Configuración de subinterfaces para VLANs
-interface ${interfaz}.100
- description VLAN 100 - Datos
- encapsulation dot1Q 100
- ip address ${resultado.segundaIp} ${resultado.mascaraDecimal}
-!
-interface ${interfaz}.200
- description VLAN 200 - Voz
- encapsulation dot1Q 200
- ip address ${resultado.gateway} ${resultado.mascaraDecimal}
-!
-! Configuración de enrutamiento entre VLANs
-ip routing
-!
-! Configuración de enrutamiento por defecto
-ip route 0.0.0.0 0.0.0.0 ${resultado.gateway}
-!
-! Configuración de servicio DHCP para VLANs
-ip dhcp excluded-address ${resultado.segundaIp} ${resultado.segundaIp}
-ip dhcp excluded-address ${resultado.gateway} ${resultado.gateway}
-!
-ip dhcp pool VLAN100
- network ${resultado.red} ${resultado.mascaraDecimal}
- default-router ${resultado.segundaIp}
- dns-server 8.8.8.8
- lease 7
-!
-ip dhcp pool VLAN200
- network ${resultado.red} ${resultado.mascaraDecimal}
- default-router ${resultado.gateway}
- dns-server 8.8.8.8
- option 150 ip ${resultado.gateway}
- lease 7
-!
-! Configuración de reloj y hora
-clock timezone UTC 0
-!
-! Configuración de servicios básicos
-ip domain-name ejemplo.com
-ip name-server 8.8.8.8
-!
-! Guardado de configuración
-do write memory
-!
-! Comandos para verificación
-do show ip interface brief
-do show ip route
-do show running-config
-do show ip dhcp binding`;
-            break;
-        case 'switch':
-            configuracion = `! Configuración para Switch Cisco
-! Configuración inicial
-enable
-configure terminal
-hostname SWITCH
-service password-encryption
-banner motd #Acceso Restringido - Solo Personal Autorizado#
-!
-! Configuración de seguridad básica
-enable secret class
-line console 0
- password cisco
- login
-line vty 0 15
- password cisco
- login
-!
-! Creación y configuración de VLANs
-vlan 100
- name Data_VLAN
-exit
-vlan 200
- name Voice_VLAN
-exit
-!
-! Configuración de interfaz de administración
-interface ${interfaz}
- description Interfaz de Administracion
- ip address ${resultado.segundaIp} ${resultado.mascaraDecimal}
- no shutdown
-!
-! Configuración de puerto troncal (uplink al router)
-interface GigabitEthernet0/1
- description Trunk to Router
- switchport trunk encapsulation dot1q
- switchport mode trunk
- switchport trunk allowed vlan 100,200
- spanning-tree portfast trunk
- no shutdown
-!
-! Configuración de puertos de acceso para VLAN de datos
-interface range FastEthernet0/1 - 12
- description Puerto de Acceso - VLAN Datos
- switchport mode access
- switchport access vlan 100
- spanning-tree portfast
- no shutdown
-!
-! Configuración de puertos de acceso para VLAN de voz
-interface range FastEthernet0/13 - 24
- description Puerto de Acceso - VLAN Voz
- switchport mode access
- switchport access vlan 200
- switchport voice vlan 200
- spanning-tree portfast
- no shutdown
-!
-! Seguridad básica de puertos
-interface range FastEthernet0/1 - 24
- switchport port-security
- switchport port-security maximum 2
- switchport port-security violation restrict
- switchport port-security mac-address sticky
-!
-! Configuración de gateway predeterminado
-ip default-gateway ${resultado.gateway}
-!
-! Guardado de configuración
-do write memory
-!
-! Comandos para verificación
-do show vlan brief
-do show interfaces trunk
-do show spanning-tree
-do show ip interface brief
-do show running-config`;
-            break;
-        case 'pc':
-            configuracion = `! Configuración para PC en Packet Tracer
-! Configuración Manual PC:
-! Haga clic en PC > Pestaña Desktop > IP Configuration
-!
-IP Configuration:
-IP Address: ${resultado.validIps.length > 0 ? resultado.validIps[0] : resultado.segundaIp}
-Subnet Mask: ${resultado.mascaraDecimal}
-Default Gateway: ${resultado.gateway}
-DNS Server: 8.8.8.8
-!
-! Configuración DHCP PC:
-! Haga clic en PC > Pestaña Desktop > IP Configuration > Seleccione "DHCP"
-!
-! Configuración para IP Phone:
-! PC conectado al puerto del teléfono:
-! VLAN Datos (100): Se asigna automáticamente por DHCP
-! VLAN Voz (200): El teléfono recibe su configuración por DHCP con Option 150
-!
-! Verificación en Command Prompt:
-ipconfig /all         (para ver la configuración completa)
-ping ${resultado.gateway}    (para probar conectividad local)
-ping 8.8.8.8          (para probar conectividad a Internet)
-tracert 8.8.8.8       (para ver la ruta de saltos)`;
-            break;
-        case 'acl':
-            configuracion = `! Configuración de ACL para red ${resultado.red}/${resultado.cidr}
-enable
-configure terminal
-!
-! ACL Estándar (Filtra por origen)
-access-list 10 remark ACL-ESTANDAR-RED-${resultado.red}
-access-list 10 permit ${resultado.red} ${resultado.wildcardMask}
-access-list 10 deny any log
-!
-! ACL Extendida (Más detallada - origen/destino/protocolo)
-no access-list 100
-access-list 100 remark ACL-EXTENDIDA-RED-${resultado.red}
-access-list 100 permit ip ${resultado.red} ${resultado.wildcardMask} any
-access-list 100 permit icmp ${resultado.red} ${resultado.wildcardMask} any echo-reply
-access-list 100 permit icmp ${resultado.red} ${resultado.wildcardMask} any echo
-access-list 100 permit tcp ${resultado.red} ${resultado.wildcardMask} any eq www
-access-list 100 permit tcp ${resultado.red} ${resultado.wildcardMask} any eq 443
-access-list 100 permit udp ${resultado.red} ${resultado.wildcardMask} any eq domain
-access-list 100 deny ip any any log
-!
-! ACL Nombrada (Más moderna y recomendada)
-ip access-list extended RED-${resultado.cidr}
- remark Permitir tráfico de la red ${resultado.red}/${resultado.cidr}
- permit ip ${resultado.red} ${resultado.wildcardMask} any
- permit tcp ${resultado.red} ${resultado.wildcardMask} any established
- deny ip any any log
-!
-! ACL para VLANs - Implementación InterVLAN
-ip access-list extended INTER-VLAN-ACL
- remark Control de tráfico entre VLANs
- permit ip 192.168.10.0 0.0.0.63 192.168.10.64 0.0.0.31
- permit ip 192.168.10.64 0.0.0.31 192.168.10.0 0.0.0.63
- deny ip any any log
-!
-! Aplicar ACL a interfaz física
-interface GigabitEthernet0/0/0
- ip access-group 10 in    ! ACL estándar en tráfico entrante
-!
-! Aplicar ACL a subinterfaces (para control de tráfico entre VLANs)
-interface GigabitEthernet0/0/0.100
- ip access-group INTER-VLAN-ACL in  ! Control tráfico entrante VLAN 100
-!
-interface GigabitEthernet0/0/0.200
- ip access-group INTER-VLAN-ACL in  ! Control tráfico entrante VLAN 200
-!
-! Aplicar ACL por tiempo (Time-Based ACL)
-time-range HORARIO-LABORAL
- periodic weekdays 8:00 to 18:00
-!
-ip access-list extended ACCESO-TEMPORAL
- permit tcp ${resultado.red} ${resultado.wildcardMask} any eq www time-range HORARIO-LABORAL
- deny tcp any any eq www log
- permit ip any any
-!
-interface GigabitEthernet0/0/1
- ip access-group ACCESO-TEMPORAL in  ! ACL basada en tiempo
-!
-! Verificación y troubleshooting de ACLs
-do show access-lists
-do show time-range
-do show ip interface | include access list
-do show run | section access-list
-!
-! Comandos para depuración (usar con precaución)
-! debug ip packet 10  ! Depura paquetes que coinciden con access-list 10
-! terminal monitor     ! Muestra mensajes de debugeo en sesión remota`;
-            break;
-        case 'vlan':
-            configuracion = `! Configuración completa de VLANs para Switch y Router
-!
-! ===== CONFIGURACIÓN DEL SWITCH =====
-!
-enable
-configure terminal
-hostname SWITCH
-service password-encryption
-banner motd #Acceso Restringido - Solo Personal Autorizado#
-!
-! Creación de VLANs
-vlan 100
- name Data_VLAN
-exit
-vlan 200
- name Voice_VLAN
-exit
-vlan 300
- name Management_VLAN
-exit
-vlan 400
- name Native_VLAN
-exit
-!
-! Configuración de interfaz de administración
-interface VLAN300
- description Interfaz de Administracion
- ip address ${resultado.segundaIp} ${resultado.mascaraDecimal}
- no shutdown
-exit
-!
-! Configuración de puerto troncal
-interface GigabitEthernet0/1
- description Trunk to Router
- switchport trunk encapsulation dot1q
- switchport trunk native vlan 400
- switchport mode trunk
- switchport trunk allowed vlan 100,200,300,400
- no shutdown
-exit
-!
-! Configuración de puertos de acceso
-interface range FastEthernet0/1 - 8
- description Puerto de Acceso - VLAN Datos
- switchport mode access
- switchport access vlan 100
- spanning-tree portfast
- no shutdown
-exit
-!
-interface range FastEthernet0/9 - 16
- description Puerto de Acceso - VLAN Voz
- switchport mode access
- switchport access vlan 200
- switchport voice vlan 200
- spanning-tree portfast
- no shutdown
-exit
-!
-! Configuración de VTP (VLAN Trunking Protocol)
-vtp domain EMPRESA
-vtp mode server
-vtp version 2
-!
-! Configuración de STP (Spanning Tree Protocol)
-spanning-tree mode rapid-pvst
-spanning-tree vlan 1,100,200,300,400 priority 24576
-!
-! Configuración de gateway predeterminado
-ip default-gateway ${resultado.gateway}
-!
-! Comandos para verificación
-do show vlan brief
-do show interfaces trunk
-do show spanning-tree
-do show vtp status
-!
-!
-! ===== CONFIGURACIÓN DEL ROUTER =====
-!
-enable
-configure terminal
-hostname ROUTER
-service password-encryption
-banner motd #Acceso Restringido - Solo Personal Autorizado#
-!
-! Configuración de interfaz física
-interface GigabitEthernet0/0/0
- description Trunk to Switch
- no ip address
- no shutdown
-exit
-!
-! Configuración de subinterfaces para VLANs
-interface GigabitEthernet0/0/0.100
- description VLAN 100 - Datos
- encapsulation dot1Q 100
- ip address 192.168.10.65 255.255.255.224
-exit
-!
-interface GigabitEthernet0/0/0.200
- description VLAN 200 - Voz
- encapsulation dot1Q 200
- ip address 192.168.10.1 255.255.255.192
-exit
-!
-interface GigabitEthernet0/0/0.300
- description VLAN 300 - Management
- encapsulation dot1Q 300
- ip address ${resultado.gateway} ${resultado.mascaraDecimal}
-exit
-!
-interface GigabitEthernet0/0/0.400
- description VLAN 400 - Native
- encapsulation dot1Q 400 native
- ip address 192.168.10.129 255.255.255.248
-exit
-!
-! Habilitar enrutamiento entre VLANs
-ip routing
-!
-! Configuración de DHCP para cada VLAN
-ip dhcp pool VLAN100
- network 192.168.10.64 255.255.255.224
- default-router 192.168.10.65
- dns-server 8.8.8.8 8.8.4.4
- domain-name empresa.local
- lease 7
-exit
-!
-ip dhcp pool VLAN200
- network 192.168.10.0 255.255.255.192
- default-router 192.168.10.1
- dns-server 8.8.8.8 8.8.4.4
- option 150 ip 192.168.10.1
- domain-name empresa.local
- lease 7
-exit
-!
-! Excluir direcciones usadas por el router
-ip dhcp excluded-address 192.168.10.65
-ip dhcp excluded-address 192.168.10.1
-ip dhcp excluded-address ${resultado.gateway}
-!
-! Comandos para verificación
-do show ip interface brief
-do show ip route
-do show running-config | section interface
-do show ip dhcp binding`;
-            break;
+        const formatoSinCerosIniciales = formatoCompleto.split(':').map(segment => {
+            return segment.replace(/^0+/, '') || '0';
+        }).join(':');
+
+        const formatoComprimido = comprimirIPv6(ipOriginal);
+
+        document.getElementById("ipv6-expanded").textContent = formatoCompleto;
+        document.getElementById("ipv6-compressed").textContent = formatoSinCerosIniciales;
+        document.getElementById("ipv6-zeros").textContent = formatoComprimido;
+    } else {
+        ipv6Details.classList.add("hidden");
     }
 
-    document.getElementById("configuracionCisco").value = configuracion;
-    document.getElementById("cisco-config-section").style.display = "block";
+    ["red", "gateway", "ultimaIp", "hosts", "mascaraDecimal", "tipo"].forEach(campo => {
+        const elemento = document.getElementById(campo);
+        if (elemento && resultado[campo]) {
+            elemento.textContent = resultado[campo];
+        } else if (elemento) {
+            elemento.textContent = "";
+        }
+    });
+
+    if (resultado.tipo === 'IPv4') {
+        const segundaIpEl = document.getElementById("segundaIp");
+        const broadcastEl = document.getElementById("broadcast");
+        const wildcardEl = document.getElementById("wildcardMask");
+
+        if (segundaIpEl) segundaIpEl.textContent = resultado.segundaIp || "";
+        if (broadcastEl) broadcastEl.textContent = resultado.broadcast || "";
+        if (wildcardEl) wildcardEl.textContent = resultado.wildcardMask || "";
+
+        const ipsValidasList = document.getElementById("ipsValidasList");
+        const validIpsSection = document.getElementById("valid-ips-section");
+
+        if (ipsValidasList && validIpsSection) {
+            ipsValidasList.innerHTML = "";
+
+            if (resultado.validIps && resultado.validIps.length > 0) {
+                resultado.validIps.forEach(ip => {
+                    const li = document.createElement("li");
+                    li.className = "bg-white/5 p-2 rounded text-xs text-light/90 hover:bg-white/10 transition-colors duration-200";
+                    li.textContent = ip;
+                    ipsValidasList.appendChild(li);
+                });
+                validIpsSection.style.display = "block";
+            } else {
+                validIpsSection.style.display = "none";
+            }
+        }
+    } else {
+        const segundaIpEl = document.getElementById("segundaIp");
+        const broadcastEl = document.getElementById("broadcast");
+        const wildcardEl = document.getElementById("wildcardMask");
+        const validIpsSection = document.getElementById("valid-ips-section");
+
+        if (segundaIpEl) segundaIpEl.textContent = "";
+        if (broadcastEl) broadcastEl.textContent = "";
+        if (wildcardEl) wildcardEl.textContent = "";
+        if (validIpsSection) validIpsSection.style.display = "none";
+    }
 }
 
 function cambiarModo(modo) {
-    ["manual", "hosts"].forEach(m => {
-        document.getElementById(`modo-${m}`).classList.toggle("active", m === modo);
-    });
+    const modoIPv4 = document.getElementById('modo-ipv4');
+    const modoIPv6 = document.getElementById('modo-ipv6');
+    const seccionIPv4 = document.getElementById('seccion-ipv4');
+    const seccionIPv6 = document.getElementById('seccion-ipv6');
 
-    document.getElementById("seccion-manual").classList.toggle("hidden", modo !== "manual");
-    document.getElementById("seccion-hosts").classList.toggle("hidden", modo !== "hosts");
+    if (modo === 'ipv4') {
+        modoIPv4.classList.add('bg-primary', 'shadow-lg', 'transform', '-translate-y-0.5', 'shadow-primary/40');
+        modoIPv4.classList.remove('bg-white/10', 'hover:bg-white/20');
+        modoIPv6.classList.remove('bg-primary', 'shadow-lg', 'transform', '-translate-y-0.5', 'shadow-primary/40');
+        modoIPv6.classList.add('bg-white/10', 'hover:bg-white/20');
+
+        seccionIPv4.classList.remove('hidden');
+        seccionIPv4.classList.add('flex');
+        seccionIPv6.classList.add('hidden');
+        seccionIPv6.classList.remove('flex');
+    } else {
+        modoIPv6.classList.add('bg-primary', 'shadow-lg', 'transform', '-translate-y-0.5', 'shadow-primary/40');
+        modoIPv6.classList.remove('bg-white/10', 'hover:bg-white/20');
+        modoIPv4.classList.remove('bg-primary', 'shadow-lg', 'transform', '-translate-y-0.5', 'shadow-primary/40');
+        modoIPv4.classList.add('bg-white/10', 'hover:bg-white/20');
+
+        seccionIPv6.classList.remove('hidden');
+        seccionIPv6.classList.add('flex');
+        seccionIPv4.classList.add('hidden');
+        seccionIPv4.classList.remove('flex');
+    }
+
+    limpiarResultados();
+    cambiarSubmodo('manual');
+}
+
+function cambiarSubmodo(submodo) {
+    const modoManual = document.getElementById('modo-manual');
+    const modoHosts = document.getElementById('modo-hosts');
+    const seccionManual = document.getElementById('seccion-manual');
+    const seccionHosts = document.getElementById('seccion-hosts');
+
+    if (submodo === 'manual') {
+        modoManual.classList.add('bg-primary', 'shadow-lg', 'transform', '-translate-y-0.5', 'shadow-primary/40');
+        modoManual.classList.remove('bg-white/10', 'hover:bg-white/20');
+        modoHosts.classList.remove('bg-primary', 'shadow-lg', 'transform', '-translate-y-0.5', 'shadow-primary/40');
+        modoHosts.classList.add('bg-white/10', 'hover:bg-white/20');
+
+        seccionManual.classList.remove('hidden', 'opacity-0');
+        seccionManual.classList.add('block');
+        seccionHosts.classList.add('hidden', 'opacity-0');
+        seccionHosts.classList.remove('flex');
+    } else {
+        modoHosts.classList.add('bg-primary', 'shadow-lg', 'transform', '-translate-y-0.5', 'shadow-primary/40');
+        modoHosts.classList.remove('bg-white/10', 'hover:bg-white/20');
+        modoManual.classList.remove('bg-primary', 'shadow-lg', 'transform', '-translate-y-0.5', 'shadow-primary/40');
+        modoManual.classList.add('bg-white/10', 'hover:bg-white/20');
+
+        seccionHosts.classList.remove('hidden', 'opacity-0');
+        seccionHosts.classList.add('flex');
+        seccionManual.classList.add('hidden', 'opacity-0');
+        seccionManual.classList.remove('block');
+    }
 
     limpiarResultados();
 }
 
-function copiarConfiguracion() {
-    const configTextarea = document.getElementById("configuracionCisco");
-    configTextarea.select();
-    document.execCommand("copy");
-
-    const botonCopiar = document.getElementById("copiarBtn");
-    const textoOriginal = botonCopiar.textContent;
-    botonCopiar.textContent = "¡Copiado!";
-
-    setTimeout(() => botonCopiar.textContent = textoOriginal, 2000);
-}
-
 function limpiarResultados() {
-    ["red", "gateway", "segundaIp", "ultimaIp", "broadcast", "hosts", "mascaraDecimal", "wildcardMask"].forEach(campo => {
-        document.getElementById(campo).textContent = "";
+    ["red", "gateway", "segundaIp", "ultimaIp", "broadcast", "hosts", "mascaraDecimal", "wildcardMask", "tipo"].forEach(campo => {
+        const elemento = document.getElementById(campo);
+        if (elemento) elemento.textContent = "";
     });
 
-    document.getElementById("ipsValidasList").innerHTML = "";
-    document.getElementById("valid-ips-section").style.display = "none";
-    document.getElementById("cisco-config-section").style.display = "none";
-    document.getElementById("configuracionCisco").value = "";
-    document.getElementById("cidr-calculado").classList.add("hidden");
+    const ipsValidasList = document.getElementById("ipsValidasList");
+    const validIpsSection = document.getElementById("valid-ips-section");
+    const cidrCalculado = document.getElementById("cidr-calculado");
+
+    if (ipsValidasList) ipsValidasList.innerHTML = "";
+    if (validIpsSection) validIpsSection.style.display = "none";
+    if (cidrCalculado) cidrCalculado.classList.add("hidden");
 }
 
 function limpiar() {
-    ["ip", "cidr", "cantidadIps"].forEach(campo => document.getElementById(campo).value = "");
-    document.getElementById("error").textContent = "";
+    ["ip", "cidr", "cantidadIps"].forEach(campo => {
+        const elemento = document.getElementById(campo);
+        if (elemento) elemento.value = "";
+    });
+    const errorElement = document.getElementById("error");
+    if (errorElement) errorElement.textContent = "";
     limpiarResultados();
 }
 
 function limpiarHosts() {
-    ["ip-hosts", "num-hosts"].forEach(campo => document.getElementById(campo).value = "");
-    document.getElementById("error-hosts").textContent = "";
-    document.getElementById("cidr-calculado").classList.add("hidden");
+    ["ip-hosts", "num-hosts"].forEach(campo => {
+        const elemento = document.getElementById(campo);
+        if (elemento) elemento.value = "";
+    });
+    const errorElement = document.getElementById("error-hosts");
+    const cidrCalculado = document.getElementById("cidr-calculado");
+
+    if (errorElement) errorElement.textContent = "";
+    if (cidrCalculado) cidrCalculado.classList.add("hidden");
+    limpiarResultados();
+}
+
+function limpiarIPv6() {
+    ["ipv6", "cidr-ipv6"].forEach(campo => {
+        const elemento = document.getElementById(campo);
+        if (elemento) elemento.value = "";
+    });
+    const errorElement = document.getElementById("error-ipv6");
+    if (errorElement) errorElement.textContent = "";
     limpiarResultados();
 }
 
 window.onload = function () {
-    document.getElementById("valid-ips-section").style.display = "none";
-    document.getElementById("cisco-config-section").style.display = "none";
-    document.getElementById("cidr-calculado").classList.add("hidden");
-    cambiarModo("manual");
+    const validIpsSection = document.getElementById("valid-ips-section");
+    const cidrCalculado = document.getElementById("cidr-calculado");
+
+    if (validIpsSection) validIpsSection.style.display = "none";
+    if (cidrCalculado) cidrCalculado.classList.add("hidden");
+
+    cambiarModo("ipv4");
+    cambiarSubmodo("manual");
 };
