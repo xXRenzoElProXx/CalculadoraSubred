@@ -2,6 +2,7 @@
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Renzo Enrique Crisanto Crisanto">
@@ -15,86 +16,233 @@
     <title>Calculadora de Subred</title>
     <link rel="stylesheet" href="estilos.css">
     <link rel="shortcut icon" href="icon.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#3b82f6',
+                        'primary-dark': '#2563eb',
+                        'secondary': '#10b981',
+                        'dark': '#1e293b',
+                        'light': '#f8fafc',
+                        'accent': '#8b5cf6',
+                        'danger': '#ef4444',
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'pulse-focus': 'pulse-focus 1.5s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        'pulse-focus': {
+                            '0%': { boxShadow: '0 0 0 0 rgba(59, 130, 246, 0.4)' },
+                            '70%': { boxShadow: '0 0 0 10px rgba(59, 130, 246, 0)' },
+                            '100%': { boxShadow: '0 0 0 0 rgba(59, 130, 246, 0)' },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
 </head>
 
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Calculadora de Subred</h2>
+<body class="font-sans text-light min-h-screen flex items-center justify-center p-4 sm:p-5">
+    <div
+        class="glass-effect rounded-2xl p-6 sm:p-7 custom-shadow-glow w-full max-w-4xl border border-white/10 hover-lift transition-all duration-300 animate-fade-in grid gap-6 md:grid-cols-2">
+
+        <div class="md:col-span-2 text-center">
+            <h2 class="text-2xl sm:text-4xl font-bold mb-4 text-light relative inline-block pb-3">
+                Calculadora de Subred
+                <div
+                    class="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent">
+                </div>
+            </h2>
         </div>
 
-        <div class="mode-selector">
-            <button id="modo-manual" class="active" onclick="cambiarModo('manual')">Modo Manual</button>
-            <button id="modo-hosts" onclick="cambiarModo('hosts')">Calcular por # Hosts</button>
+        <div class="md:col-span-2 flex justify-center gap-2.5 flex-wrap mb-5">
+            <button id="modo-ipv4"
+                class="px-5 py-2.5 bg-primary text-white border border-white/10 rounded-xl cursor-pointer transition-all duration-300 flex-1 min-w-[120px] shadow-lg transform -translate-y-0.5 shadow-primary/40 focus:animate-pulse-focus"
+                onclick="cambiarModo('ipv4')">
+                IPv4
+            </button>
+            <button id="modo-ipv6"
+                class="px-5 py-2.5 bg-white/10 text-white border border-white/10 rounded-xl cursor-pointer transition-all duration-300 flex-1 min-w-[120px] hover:bg-white/20"
+                onclick="cambiarModo('ipv6')">
+                IPv6
+            </button>
         </div>
 
-        <div class="input-section" id="seccion-manual">
-            <input type="text" id="ip" placeholder="Ingrese la IP (Ej: 172.168.59.111)" oninput="validarIp()"
-                autocomplete="off">
-            <input type="number" id="cidr" placeholder="Máscara CIDR (Ej: 26)" min="1" max="32"
-                oninput="validarCidr(); actualizarMaximoCantidadIps()" autocomplete="off">
-            <input type="number" id="cantidadIps" placeholder="Cantidad de IPs válidas (opcional)" min="1"
-                oninput="validarCantidadIps()" autocomplete="off">
-            <select id="tipoDispositivo">
-                <option value="router">Router Cisco</option>
-                <option value="switch">Switch Cisco</option>
-                <option value="pc">PC / Host</option>
-                <option value="vlan">VLAN</option>
-                <option value="acl">ACL (Access Control List)</option>
-            </select>
-            <div class="buttons">
-                <button onclick="calcular()" id="calcular">Calcular</button>
-                <button onclick="limpiar()" id="limpiar">Limpiar</button>
-            </div>
-            <div id="error" class="error"></div>
-        </div>
-
-        <div class="input-section hidden" id="seccion-hosts">
-            <input type="text" id="ip-hosts" placeholder="Ingrese la IP (Ej: 172.168.59.111)" autocomplete="off">
-            <input type="number" id="num-hosts" placeholder="Número de hosts necesarios (Ej: 62)" min="1"
-                oninput="validarNumHosts()" autocomplete="off">
-            <select id="tipoDispositivo-hosts">
-                <option value="router">Router Cisco</option>
-                <option value="switch">Switch Cisco</option>
-                <option value="pc">PC / Host</option>
-                <option value="acl">ACL (Access Control List)</option>
-            </select>
-            <div class="buttons">
-                <button onclick="calcularPorHosts()" id="calcular-hosts">Calcular</button>
-                <button onclick="limpiarHosts()" id="limpiar-hosts">Limpiar</button>
-            </div>
-            <div id="error-hosts" class="error"></div>
-            <div id="cidr-calculado" class="cidr-info hidden">
-                <p>Máscara CIDR calculada: <span id="cidr-valor"></span></p>
-            </div>
-        </div>
-
-        <div class="results-section">
-            <div class="result">
-                <p><strong>Segmento de Red:</strong> <span id="red"></span></p>
-                <p><strong>Gateway (Primera IP):</strong> <span id="gateway"></span></p>
-                <p><strong>Segunda IP válida:</strong> <span id="segundaIp"></span></p>
-                <p><strong>Última IP válida:</strong> <span id="ultimaIp"></span></p>
-                <p><strong>Broadcast:</strong> <span id="broadcast"></span></p>
-                <p><strong>#Hosts:</strong> <span id="hosts"></span></p>
-                <p><strong>Máscara de Subred:</strong> <span id="mascaraDecimal"></span></p>
-                <p><strong>Máscara Wildcard:</strong> <span id="wildcardMask"></span></p>
+        <div class="flex flex-col gap-4" id="seccion-ipv4">
+            <div class="flex gap-3">
+                <button id="modo-manual"
+                    class="px-5 py-2.5 bg-primary text-white border border-white/10 rounded-xl cursor-pointer transition-all duration-300 flex-1 min-w-[120px] shadow-lg transform -translate-y-0.5 shadow-primary/40 focus:animate-pulse-focus"
+                    onclick="cambiarSubmodo('manual')">
+                    Modo Manual
+                </button>
+                <button id="modo-hosts"
+                    class="px-5 py-2.5 bg-white/10 text-white border border-white/10 rounded-xl cursor-pointer transition-all duration-300 flex-1 min-w-[120px] hover:bg-white/20"
+                    onclick="cambiarSubmodo('hosts')">
+                    Calcular por # Hosts
+                </button>
             </div>
 
-            <div class="valid-ips" id="valid-ips-section">
-                <p>IPs válidas:</p>
-                <ul id="ipsValidasList"></ul>
+            <div id="seccion-manual">
+                <input type="text" id="ip" placeholder="Ingrese la IP (Ej: 172.168.59.111)"
+                    class="p-3 border border-white/10 rounded-xl input-bg text-light w-full text-base transition-all duration-300 outline-none placeholder-white/40 hover:border-white/25 focus:border-primary focus:ring-4 focus:ring-primary/30"
+                    oninput="validarIp('ip')" autocomplete="off" maxlength="15">
+
+                <input type="number" id="cidr" placeholder="Máscara CIDR (Ej: 26)" min="1" max="32"
+                    class="p-3 border border-white/10 rounded-xl input-bg text-light w-full text-base transition-all duration-300 outline-none placeholder-white/40 hover:border-white/25 focus:border-primary focus:ring-4 focus:ring-primary/30 mt-4"
+                    oninput="validarCidr(); actualizarMaximoCantidadIps()" autocomplete="off">
+
+                <input type="number" id="cantidadIps" placeholder="Cantidad de IPs válidas (opcional)" min="1"
+                    class="p-3 border border-white/10 rounded-xl input-bg text-light w-full text-base transition-all duration-300 outline-none placeholder-white/40 hover:border-white/25 focus:border-primary focus:ring-4 focus:ring-primary/30 mt-4"
+                    oninput="validarCantidadIps()" autocomplete="off">
+
+                <div class="flex gap-3 mt-4 flex-wrap">
+                    <button onclick="calcular()" id="calcular"
+                        class="gradient-primary text-white border-none rounded-xl py-3.5 px-5 text-base font-semibold cursor-pointer transition-all duration-300 flex-1 shadow-sm relative overflow-hidden min-w-[120px] button-shimmer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm focus:animate-pulse-focus">
+                        Calcular
+                    </button>
+                    <button onclick="limpiar()" id="limpiar"
+                        class="bg-transparent border border-white/20 text-light rounded-xl py-3.5 px-5 text-base font-semibold cursor-pointer transition-all duration-300 flex-1 relative min-w-[120px] hover:bg-white/10 hover:-translate-y-0.5 active:translate-y-0">
+                        Limpiar
+                    </button>
+                </div>
+
+                <div id="error"
+                    class="text-danger text-sm min-h-[20px] font-medium transition-opacity duration-200 mt-2"></div>
+            </div>
+
+            <div class="flex-col gap-4 opacity-0 hidden" id="seccion-hosts">
+                <input type="text" id="ip-hosts" placeholder="Ingrese la IP (Ej: 172.168.59.111)"
+                    class="p-3 border border-white/10 rounded-xl input-bg text-light w-full text-base transition-all duration-300 outline-none placeholder-white/40 hover:border-white/25 focus:border-primary focus:ring-4 focus:ring-primary/30"
+                    oninput="validarIp('ip-hosts')" autocomplete="off" maxlength="15">
+
+                <input type="number" id="num-hosts" placeholder="Número de hosts necesarios (Ej: 62)" min="1"
+                    class="p-3 border border-white/10 rounded-xl input-bg text-light w-full text-base transition-all duration-300 outline-none placeholder-white/40 hover:border-white/25 focus:border-primary focus:ring-4 focus:ring-primary/30 mt-4"
+                    oninput="validarNumHosts()" autocomplete="off">
+
+                <div class="flex gap-3 mt-4 flex-wrap">
+                    <button onclick="calcularPorHosts()" id="calcular-hosts"
+                        class="gradient-primary text-white border-none rounded-xl py-3.5 px-5 text-base font-semibold cursor-pointer transition-all duration-300 flex-1 shadow-sm relative overflow-hidden min-w-[120px] button-shimmer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm focus:animate-pulse-focus">
+                        Calcular
+                    </button>
+                    <button onclick="limpiarHosts()" id="limpiar-hosts"
+                        class="bg-transparent border border-white/20 text-light rounded-xl py-3.5 px-5 text-base font-semibold cursor-pointer transition-all duration-300 flex-1 relative min-w-[120px] hover:bg-white/10 hover:-translate-y-0.5 active:translate-y-0">
+                        Limpiar
+                    </button>
+                </div>
+
+                <div id="error-hosts"
+                    class="text-danger text-sm min-h-[20px] font-medium transition-opacity duration-200 mt-2">
+                </div>
+
+                <div id="cidr-calculado" class="bg-white/8 p-3.5 rounded-xl border border-white/10 hidden mt-4"
+                    style="margin-top: -30px; margin-bottom: 10px;">
+                    <p class="m-0 font-semibold text-primary text-center">
+                        Máscara CIDR calculada: <span id="cidr-valor"
+                            class="bg-primary/15 text-light py-1 px-2 rounded-lg font-semibold inline-block mx-0.5"></span>
+                    </p>
+                </div>
             </div>
         </div>
 
-        <div class="cisco-config" id="cisco-config-section">
-            <h3>Configuración Cisco</h3>
-            <textarea id="configuracionCisco" readonly></textarea>
-            <button id="copiarBtn" onclick="copiarConfiguracion()">Copiar Configuración</button>
+        <div class="flex flex-col gap-4 hidden" id="seccion-ipv6">
+            <input type="text" id="ipv6" placeholder="Ingrese la IPv6 (Ej: 2001:0db8:85a3::8a2e:0370:7334)"
+                class="p-3 border border-white/10 rounded-xl input-bg text-light w-full text-base transition-all duration-300 outline-none placeholder-white/40 hover:border-white/25 focus:border-primary focus:ring-4 focus:ring-primary/30"
+                oninput="validarIPv6('ipv6')" autocomplete="off" maxlength="39">
+
+            <input type="number" id="cidr-ipv6" placeholder="Prefijo CIDR (Ej: 64)" min="1" max="128"
+                class="p-3 border border-white/10 rounded-xl input-bg text-light w-full text-base transition-all duration-300 outline-none placeholder-white/40 hover:border-white/25 focus:border-primary focus:ring-4 focus:ring-primary/30"
+                oninput="validarCidrIPv6()" autocomplete="off">
+
+            <div class="flex gap-3 mt-2 flex-wrap">
+                <button onclick="calcularIPv6()" id="calcular-ipv6"
+                    class="gradient-primary text-white border-none rounded-xl py-3.5 px-5 text-base font-semibold cursor-pointer transition-all duration-300 flex-1 shadow-sm relative overflow-hidden min-w-[120px] button-shimmer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm focus:animate-pulse-focus">
+                    Calcular
+                </button>
+                <button onclick="limpiarIPv6()" id="limpiar-ipv6"
+                    class="bg-transparent border border-white/20 text-light rounded-xl py-3.5 px-5 text-base font-semibold cursor-pointer transition-all duration-300 flex-1 relative min-w-[120px] hover:bg-white/10 hover:-translate-y-0.5 active:translate-y-0">
+                    Limpiar
+                </button>
+            </div>
+
+            <div id="error-ipv6" class="text-danger text-sm min-h-[20px] font-medium transition-opacity duration-200">
+            </div>
         </div>
 
-        <footer class="footer">
-            <p>&copy; 2025 - Desarrollado por Renzo Crisanto</p>
+        <div class="flex flex-col gap-4">
+            <div
+                class="input-bg rounded-xl p-4 text-left border border-white/10 shadow-inner transition-transform duration-200 hover:-translate-y-0.5">
+                <p class="my-2.5 text-sm flex flex-wrap justify-between items-center gap-1">
+                    <strong class="text-primary font-semibold min-w-[110px]">Segmento de Red:</strong>
+                    <span id="red" class="text-light font-medium flex-1 break-words"></span>
+                </p>
+                <p class="my-2.5 text-sm flex flex-wrap justify-between items-center gap-1">
+                    <strong class="text-primary font-semibold min-w-[110px]">Gateway (Primera IP):</strong>
+                    <span id="gateway" class="text-light font-medium flex-1 break-words"></span>
+                </p>
+                <p class="my-2.5 text-sm flex flex-wrap justify-between items-center gap-1">
+                    <strong class="text-primary font-semibold min-w-[110px]">Última IP válida:</strong>
+                    <span id="ultimaIp" class="text-light font-medium flex-1 break-words"></span>
+                </p>
+                <div id="ipv6-details" class="hidden">
+                    <div class="border-t border-white/10 my-3 pt-3">
+                        <p class="text-primary font-semibold mb-2 text-sm">Formatos de representación:</p>
+                        <p class="my-2 text-xs flex flex-col gap-1">
+                            <span class="font-medium">Formato completo (sin omisiones):</span>
+                            <span id="ipv6-expanded" class="text-light/90 bg-white/5 p-2 rounded break-all"></span>
+                        </p>
+                        <p class="my-2 text-xs flex flex-col gap-1">
+                            <span class="font-medium">Formato con omisión de ceros iniciales:</span>
+                            <span id="ipv6-compressed" class="text-light/90 bg-white/5 p-2 rounded break-all"></span>
+                        </p>
+                        <p class="my-2 text-xs flex flex-col gap-1">
+                            <span class="font-medium">Formato con omisión de segmentos consecutivos en cero:</span>
+                            <span id="ipv6-zeros" class="text-light/90 bg-white/5 p-2 rounded break-all"></span>
+                        </p>
+                    </div>
+                </div>
+                <p class="my-2.5 text-sm flex flex-wrap justify-between items-center gap-1">
+                    <strong class="text-primary font-semibold min-w-[110px]">Tipo:</strong>
+                    <span id="tipo" class="text-light font-medium flex-1 break-words"></span>
+                </p>
+                <p class="my-2.5 text-sm flex flex-wrap justify-between items-center gap-1">
+                    <strong class="text-primary font-semibold min-w-[110px]">#Hosts:</strong>
+                    <span id="hosts" class="text-light font-medium flex-1 break-words"></span>
+                </p>
+                <p class="my-2.5 text-sm flex flex-wrap justify-between items-center gap-1">
+                    <strong class="text-primary font-semibold min-w-[110px]">Máscara/Prefijo:</strong>
+                    <span id="mascaraDecimal" class="text-light font-medium flex-1 break-words"></span>
+                </p>
+            </div>
+
+            <div class="input-bg rounded-xl p-4 text-left border border-white/10 shadow-inner max-h-45 overflow-y-auto mb-4 custom-scrollbar"
+                id="valid-ips-section">
+                <p class="text-primary font-semibold mb-2.5 text-sm">IPs válidas:</p>
+                <ul id="ipsValidasList"
+                    class="list-none p-0 grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-2"></ul>
+            </div>
+        </div>
+
+        <footer
+            class="md:col-span-2 bg-black/70 text-white text-center p-4 border-t border-white/10 text-sm backdrop-blur-sm shadow-[0_-2px_8px_rgba(0,0,0,0.2)] relative z-10 rounded-b-2xl -mt-4">
+            <p class="m-0 font-sans text-sm">&copy; 2025 - Desarrollado por Renzo Crisanto</p>
         </footer>
     </div>
 
